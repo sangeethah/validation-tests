@@ -1228,7 +1228,6 @@ def test_rancher_compose_inservice_upgrade_rollback_retainip(
 
 
 @if_compose_data_files
-# known issue 5476
 def test_rancher_compose_inservice_upgrade_set_retainip_during_upgrade(
         super_client, client, rancher_compose_container):
     # Create an environment using up
@@ -1297,6 +1296,7 @@ def test_rancher_compose_inservice_upgrade_set_retainip_during_upgrade(
 
 
 @if_compose_data_files
+# known issue 5476
 def test_rancher_compose_inservice_upgrade_retainip_during_upgrade_rollback(
         super_client, client, rancher_compose_container):
 
@@ -1341,9 +1341,9 @@ def test_rancher_compose_inservice_upgrade_retainip_during_upgrade_rollback(
 
     # Upgrade environment using up --upgrade
     launch_rancher_compose_from_file(
-        client, INSERVICE_SUBDIR, "dc_inservice1_retainip_2.yml", env_name,
+        client, INSERVICE_SUBDIR, "dc_inservice2_retainip_2.yml", env_name,
         "up --upgrade -d --batch-size 3 --interval 500", "Upgrading",
-        "dc_inservice1_retainip_2.yml")
+        "rc_inservice2_retainip_2.yml")
     service = client.reload(service)
     assert service.state == "upgraded"
     assert service.retainIp
