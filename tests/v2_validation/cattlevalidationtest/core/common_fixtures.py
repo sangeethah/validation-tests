@@ -100,7 +100,7 @@ rancher_compose_con = {"container": None, "host": None, "port": "7878"}
 kubectl_client_con = {"container": None, "host": None, "port": "9999"}
 rancher_cli_con = {"container": None, "host": None, "port": "7879"}
 kubectl_version = os.environ.get('KUBECTL_VERSION', "v1.4.6")
-CONTAINER_STATES = ["running", "stopped", "stopping"]
+CONTAINER_STATES = ["running", "stopped", "stopping", "starting"]
 check_connectivity_by_wget = True
 cert_list = {}
 
@@ -1929,17 +1929,54 @@ def get_service_containers_with_name(
 
 
 def wait_until_instances_get_stopped_for_service_with_sec_launch_configs(
-        admin_client, service, timeout=60):
+        admin_client, service, timeout=60, scale=None):
+    if scale is None:
+        scale = service.scale
     stopped_count = 0
     start = time.time()
-    container_count = service.scale*(len(service.secondaryLaunchConfigs)+1)
+    container_count = scale*(len(service.secondaryLaunchConfigs)+1)
+    print container_count
     while stopped_count != container_count:
         time.sleep(.5)
         container_list = get_service_container_list(admin_client, service)
         stopped_count = 0
         for con in container_list:
+            print con.name
+            print con.state
+            print stopped_count
             if con.state == "stopped":
                 stopped_count = stopped_count + 1
+        if time.time() - start > timeout:
+            raise Exception(
+                'Timed out waiting for instances to get to stopped state')
+
+
+def wait_until_instances_get_running_for_service_with_sec_launch_configs(
+        admin_client, service, timeout=60, scale=None):
+    if scale is None:
+        scale = service.scale
+    running_count = 0
+    start = time.time()
+    container_count = scale*(len(service.secondaryLaunchConfigs)+1)
+    print container_count
+    while running_count != container_count:
+        time.sleep(.5)
+        service_det = admin_client.list_service(name=service.name,
+                                                include="instances")
+        assert len(service_det) == 1
+        container_list = service_det[0].instances
+        print len(container_list)
+        running_count = 0
+        for con in container_list:
+            print con.name
+            print con.state
+            print running_count
+            if 'io.rancher.container.start_once' in con.labels:
+                if con.state in ("running", "stopped"):
+                    running_count = running_count + 1
+            else:
+                if con.state == "running" and con.healthState == "healthy":
+                    running_count = running_count + 1
         if time.time() - start > timeout:
             raise Exception(
                 'Timed out waiting for instances to get to stopped state')
@@ -3273,13 +3310,15 @@ def execute_rancher_cli(client, stack_name, command,
 
 def launch_rancher_cli_from_file(client, subdir, env_name, command,
                                  expected_response, docker_compose=None,
-                                 rancher_compose=None):
+                                 rancher_compose=None,
+                                 timeout=SERVICE_WAIT_TIMEOUT):
     if docker_compose is not None:
         docker_compose = readDataFile(subdir, docker_compose)
     if rancher_compose is not None:
         rancher_compose = readDataFile(subdir, rancher_compose)
     cli_response = execute_rancher_cli(client, env_name, command,
-                                       docker_compose, rancher_compose)
+                                       docker_compose, rancher_compose,
+                                       timeout=timeout)
     print "Obtained Response: " + str(cli_response)
     print "Expected Response: " + str(expected_response)
     found = False

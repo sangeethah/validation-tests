@@ -1,0 +1,121 @@
+version: '2'
+services:
+  controller-manager:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 10252
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      request_line: GET /healthz HTTP/1.0
+      reinitializing_timeout: 60000
+  scheduler:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 10251
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      request_line: GET /healthz HTTP/1.0
+      reinitializing_timeout: 60000
+  kubernetes:
+    metadata:
+      sans: &id001
+      - IP:10.43.0.1
+    retain_ip: true
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 80
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      request_line: GET /healthz HTTP/1.0
+      reinitializing_timeout: 60000
+  proxy:
+    start_on_create: true
+  kube-hostname-updater:
+    metadata:
+      sans: *id001
+    retain_ip: true
+    scale: 1
+    start_on_create: true
+  rancher-ingress-controller:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 10241
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      request_line: GET /healthz HTTP/1.0
+      reinitializing_timeout: 60000
+  data:
+    scale_policy: &id002
+      increment: 1
+      max: 3
+      min: 1
+    retain_ip: true
+    scale: 1
+    start_on_create: true
+  rancher-kubernetes-agent:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 10240
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      request_line: GET /healthcheck HTTP/1.0
+      reinitializing_timeout: 60000
+  kubelet:
+    start_on_create: true
+  kubectld:
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 2000
+      port: 8091
+      unhealthy_threshold: 3
+      initializing_timeout: 60000
+      interval: 2000
+      strategy: recreate
+      reinitializing_timeout: 60000
+  addon-starter:
+    scale: 1
+    start_on_create: true
+  etcd:
+    scale_policy: *id002
+    retain_ip: true
+    scale: 1
+    start_on_create: true
+    health_check:
+      healthy_threshold: 2
+      response_timeout: 3000
+      recreate_on_quorum_strategy_config:
+        quorum: 2
+      port: 2378
+      unhealthy_threshold: 3
+      initializing_timeout: 120000
+      interval: 5000
+      strategy: recreateOnQuorum
+      request_line: GET /health HTTP/1.0
+      reinitializing_timeout: 120000

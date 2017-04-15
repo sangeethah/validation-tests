@@ -1773,8 +1773,12 @@ def check_for_sidekick_name_in_service(service, sidekick_name):
 
 
 def upgrade_stack(client, stack_name, service, docker_compose,
-                  rancher_compose=None, upgrade_option=None):
-    upgrade_cmd = "up --upgrade -d "
+                  rancher_compose=None, upgrade_option=None,
+                  force_upgrade=False):
+    if force_upgrade:
+        upgrade_cmd = "up --force-upgrade -d "
+    else:
+        upgrade_cmd = "up --upgrade -d "
     if upgrade_option is not None:
         upgrade_cmd += upgrade_option
     launch_rancher_cli_from_file(
