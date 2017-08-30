@@ -959,7 +959,7 @@ def fetch_rancher_metadata(client, con, port, command, version=None):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address,
                 username="root",
-                password="root",
+                password=USER_PASSWORD,
                 port=port)
     print rancher_metadata_cmd
     stdin, stdout, stderr = ssh.exec_command(rancher_metadata_cmd)

@@ -289,6 +289,7 @@ def test_rancher_compose_services_port_and_link_options(
 
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
                      "ports": [str(exposed_port)+":22/tcp"],
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "instanceLinks": {
                          link_name:
                              link_container.id},
@@ -385,6 +386,7 @@ def test_rancher_compose_lbservice_internal(client,
     host = hosts[0]
     client_con = client.create_container(
         name=random_str(), imageUuid=SSH_IMAGE_UUID,
+        environment={"ROOT_PASSWORD": USER_PASSWORD},
         ports=[con_port+":22/tcp"], requestedHostId=host.id)
     client_con = client.wait_success(client_con, 120)
     assert client_con.state == "running"

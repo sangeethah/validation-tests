@@ -1389,7 +1389,7 @@ def test_service_with_healthcheck_container_tcp_unhealthy(
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostIpAddress, username="root",
-                password="root", port=port)
+                password=USER_PASSWORD, port=port)
     cmd = "service ssh stop"
     logger.info(cmd)
     stdin, stdout, stderr = ssh.exec_command(cmd)
@@ -1890,6 +1890,7 @@ def service_with_healthcheck_enabled(client, scale, port=None,
                     "interval": 2000, "healthyThreshold": 2,
                     "unhealthyThreshold": 3}
     launch_config = {"imageUuid": HEALTH_CHECK_IMAGE_UUID,
+                     "environment" : {"ROOT_PASSWORD": USER_PASSWORD},
                      "healthCheck": health_check
                      }
 

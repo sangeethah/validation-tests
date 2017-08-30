@@ -118,7 +118,7 @@ def upload_initial_certs(cert_list, default_cert=None):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_cert_con["host"], username="root",
-        password="root", port=int(test_cert_con["port"]))
+        password=USER_PASSWORD, port=int(test_cert_con["port"]))
     cmd = "mkdir -p /certs/mycerts;"
     cmd += "cd /certs/mycerts;rm -rf *;"
     cmd += "mkdir -p /certs/default.com;"
@@ -140,7 +140,7 @@ def upload_additional_certs(cert_list=None, default_cert=None):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_cert_con["host"], username="root",
-        password="root", port=int(test_cert_con["port"]))
+        password=USER_PASSWORD, port=int(test_cert_con["port"]))
     if cert_list is not None:
         for domain_name in cert_list:
             cmd = "cd /certs/mycerts;"
@@ -159,7 +159,7 @@ def edit_existing_certs(existing_cert, modified_cert, is_default_cert=False):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_cert_con["host"], username="root",
-        password="root", port=int(test_cert_con["port"]))
+        password=USER_PASSWORD, port=int(test_cert_con["port"]))
     cert, key, certChain = get_cert_for_domain(modified_cert)
     cert_file = existing_cert + ".crt"
     key_file = existing_cert + ".key"
@@ -181,7 +181,7 @@ def delete_existing_certs(cert_list=None, default_cert=None):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_cert_con["host"], username="root",
-        password="root", port=int(test_cert_con["port"]))
+        password=USER_PASSWORD, port=int(test_cert_con["port"]))
     if cert_list is not None:
         for domain_name in cert_list:
             cmd = "cd /certs/mycerts;"

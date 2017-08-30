@@ -845,7 +845,7 @@ def validate_for_container_dns_resolution(
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host.ipAddresses()[0].address, username="root",
-                    password="root", port=int(sshport))
+                    password=USER_PASSWORD, port=int(sshport))
 
         # Validate container name resolution
         cmd = "wget -O result.txt --timeout=20 --tries=1 http://" + \

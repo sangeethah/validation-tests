@@ -13,6 +13,7 @@ import json
 import base64
 import jinja2
 import docker
+import uuid
 
 
 logging.basicConfig()
@@ -65,6 +66,8 @@ RANCHER_EBS = os.environ.get(
 STRESS_TEST = os.environ.get(
     'STRESS_TEST', "false")
 
+USER_PASSWORD = str(uuid.uuid4())
+
 ACCESS_KEY = os.environ.get('ACCESS_KEY')
 SECRET_KEY = os.environ.get('SECRET_KEY')
 PROJECT_ID = os.environ.get('PROJECT_ID', "1a5")
@@ -82,11 +85,11 @@ if_stress = pytest.mark.skipif(
 WEB_IMAGE_UUID = "docker:sangeetha/testlbsd:latest"
 WEB_SSL_IMAGE1_UUID = "docker:sangeetha/ssllbtarget1:latest"
 WEB_SSL_IMAGE2_UUID = "docker:sangeetha/ssllbtarget2:latest"
-SSH_IMAGE_UUID = "docker:sangeetha/testclient:latest"
+SSH_IMAGE_UUID = "docker:sangeetha/testclient:v2"
 LB_HOST_ROUTING_IMAGE_UUID = "docker:sangeetha/testnewhostrouting:latest"
-SSH_IMAGE_UUID_HOSTNET = "docker:sangeetha/testclient33:latest"
-HOST_ACCESS_IMAGE_UUID = "docker:sangeetha/testclient44:latest"
-HEALTH_CHECK_IMAGE_UUID = "docker:sangeetha/testhealthcheck:v2"
+SSH_IMAGE_UUID_HOSTNET = "docker:sangeetha/testclient33:v2"
+HOST_ACCESS_IMAGE_UUID = "docker:sangeetha/testclient44:v2"
+HEALTH_CHECK_IMAGE_UUID = "docker:sangeetha/testhealthcheck:v3"
 MULTIPLE_EXPOSED_PORT_UUID = "docker:sangeetha/testmultipleport:v1"
 MICROSERVICE_IMAGES = {"haproxy_image_uuid": None}
 
@@ -153,7 +156,6 @@ def cattle_url(project_id=None):
     if project_id is not None:
         server_url += "/projects/"+project_id
     return server_url
-
 
 def rancher_server_url():
     default_url = 'http://localhost:8080'
@@ -821,6 +823,7 @@ def create_socat_containers(client):
             name='host-%s' % random_str(),
             networkMode="host",
             imageUuid=HOST_ACCESS_IMAGE_UUID,
+            environment={"ROOT_PASSWORD": USER_PASSWORD},
             privileged=True,
             requestedHostId=host.id,
             restartPolicy={"name": "always"})
@@ -1025,7 +1028,7 @@ def validate_exposed_port_and_container_link(client, con, link_name,
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address, username="root",
-                password="root", port=exposed_port)
+                password=USER_PASSWORD, port=exposed_port)
 
     # Validate link containers
     cmd = "wget -O result.txt  --timeout=20 --tries=1 http://" + \
@@ -1060,7 +1063,7 @@ def wait_for_lb_service_to_become_active(client, service, lb_service):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host.ipAddresses()[0].address, username="root",
-                    password="root", port=44)
+                    password=USER_PASSWORD, port=44)
 
         cmd = "iptables-save"
         logger.info(cmd)
@@ -1271,7 +1274,7 @@ def validate_linked_service(admin_client, service, consumed_services,
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(host.ipAddresses()[0].address, username="root",
-                        password="root", port=int(exposed_port))
+                        password=USER_PASSWORD, port=int(exposed_port))
 
             if linkName is None:
                 linkName = consumed_service.name
@@ -1383,7 +1386,7 @@ def validate_dns_service(admin_client, service, consumed_services,
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host.ipAddresses()[0].address, username="root",
-                    password="root", port=int(exposed_port))
+                    password=USER_PASSWORD, port=int(exposed_port))
 
         # Validate link containers
         cmd = "wget -O result.txt --timeout=20 --tries=1 http://" + dnsname + \
@@ -1444,7 +1447,7 @@ def validate_external_service(admin_client, service, ext_services,
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(host.ipAddresses()[0].address, username="root",
-                        password="root", port=int(exposed_port))
+                        password=USER_PASSWORD, port=int(exposed_port))
 
             ext_service_name = ext_service.name
             if fqdn is not None:
@@ -1497,7 +1500,7 @@ def validate_external_service_for_hostname(admin_client, service, ext_services,
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(host.ipAddresses()[0].address, username="root",
-                        password="root", port=int(exposed_port))
+                        password=USER_PASSWORD, port=int(exposed_port))
             cmd = "ping -c 2 " + ext_service.name + \
                   "> result.txt;cat result.txt"
             print cmd
@@ -1528,7 +1531,8 @@ def rancher_compose_container(admin_client, client, request):
     port = rancher_compose_con["port"]
     c = client.create_container(name="rancher-compose-client",
                                 networkMode=MANAGED_NETWORK,
-                                imageUuid="docker:sangeetha/testclient",
+                                imageUuid=SSH_IMAGE_UUID,
+                                environment={"ROOT_PASSWORD": USER_PASSWORD},
                                 ports=[port+":22/tcp"],
                                 requestedHostId=host.id
                                 )
@@ -1540,7 +1544,7 @@ def rancher_compose_container(admin_client, client, request):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address, username="root",
-                password="root", port=int(port))
+                password=USER_PASSWORD, port=int(port))
     cmd = cmd1+";"+cmd2
     print cmd
     stdin, stdout, stderr = ssh.exec_command(cmd)
@@ -1601,7 +1605,7 @@ def execute_rancher_compose(client, env_name, docker_compose,
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         rancher_compose_con["host"].ipAddresses()[0].address, username="root",
-        password="root", port=int(rancher_compose_con["port"]))
+        password=USER_PASSWORD, port=int(rancher_compose_con["port"]))
     cmd = cmd1+";"+cmd2+";"+cmd3+";"+cmd4+";"+cmd5+";"+cmd6
     print cmd
     stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
@@ -1773,7 +1777,8 @@ def create_env_with_ext_svc_and_lb(client, scale_lb, port):
 def create_env_with_2_svc(client, scale_svc, scale_consumed_svc, port):
 
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
-                         "ports": [port+":22/tcp"]}
+                         "ports": [port+":22/tcp"],
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     launch_config_consumed_svc = {"imageUuid": WEB_IMAGE_UUID}
 
@@ -1809,7 +1814,8 @@ def create_env_with_2_svc_dns(client, scale_svc, scale_consumed_svc, port,
                               cross_linking=False):
 
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
-                         "ports": [port+":22/tcp"]}
+                         "ports": [port+":22/tcp"],
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     launch_config_consumed_svc = {"imageUuid": WEB_IMAGE_UUID}
 
@@ -1870,7 +1876,8 @@ def create_env_with_2_svc_dns(client, scale_svc, scale_consumed_svc, port,
 def create_env_with_ext_svc(client, scale_svc, port, hostname=False):
 
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
-                         "ports": [port+":22/tcp"]}
+                         "ports": [port+":22/tcp"],
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     # Create Environment
     env = create_env(client)
@@ -2134,7 +2141,7 @@ def check_cert_using_openssl(host, port, domain, test_ssl_client_con):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_ssl_client_con["host"].ipAddresses()[0].address, username="root",
-        password="root", port=int(test_ssl_client_con["port"]))
+        password=USER_PASSWORD, port=int(test_ssl_client_con["port"]))
 
     cmd = "openssl s_client" + \
           " -connect " + host.ipAddresses()[0].address + ":" + port + \
@@ -2168,7 +2175,7 @@ def check_round_robin_access_for_ssl_lb_ip(container_names, lb_ip,
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_ssl_client_con["host"].ipAddresses()[0].address, username="root",
-        password="root", port=int(test_ssl_client_con["port"]))
+        password=USER_PASSWORD, port=int(test_ssl_client_con["port"]))
 
     cmd = "echo '" + lb_ip + \
           " " + domain + "'> /etc/hosts;grep " + domain + " /etc/hosts"
@@ -2215,7 +2222,7 @@ def check_for_cert_error(host, port, domain, default_domain, cert,
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         test_ssl_client_con["host"].ipAddresses()[0].address, username="root",
-        password="root", port=int(test_ssl_client_con["port"]))
+        password=USER_PASSWORD, port=int(test_ssl_client_con["port"]))
 
     cmd = "echo '" + host.ipAddresses()[0].address + \
           " " + domain + "'> /etc/hosts;grep " + domain + " /etc/hosts"
@@ -2521,7 +2528,7 @@ def validate_internal_lb(admin_client, lb_service, services,
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host.ipAddresses()[0].address, username="root",
-                    password="root", port=int(con_port))
+                    password=USER_PASSWORD, port=int(con_port))
 
         # Validate lb service from this container using LB agent's ip address
         cmd = "wget -O result.txt --timeout=20 --tries=1 http://" + lb_ip + \
@@ -2541,7 +2548,8 @@ def create_env_with_2_svc_hostnetwork(
         isnetworkModeHost_svc=False,
         isnetworkModeHost_consumed_svc=False):
 
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID_HOSTNET}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID_HOSTNET,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_consumed_svc = {"imageUuid": WEB_IMAGE_UUID}
 
     if isnetworkModeHost_svc:
@@ -2586,7 +2594,8 @@ def create_env_with_2_svc_dns_hostnetwork(
         cross_linking=False, isnetworkModeHost_svc=False,
         isnetworkModeHost_consumed_svc=False):
 
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID_HOSTNET}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID_HOSTNET,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_consumed_svc = {"imageUuid": WEB_IMAGE_UUID}
 
     if isnetworkModeHost_svc:
@@ -2702,7 +2711,8 @@ def create_client_container_for_ssh(client, port):
     host = hosts[0]
     c = client.create_container(name="lb-test-client" + port,
                                 networkMode=MANAGED_NETWORK,
-                                imageUuid="docker:sangeetha/testclient",
+                                imageUuid=SSH_IMAGE_UUID,
+                                environment={"ROOT_PASSWORD": USER_PASSWORD},
                                 ports=[port+":22/tcp"],
                                 requestedHostId=host.id
                                 )
@@ -2713,7 +2723,7 @@ def create_client_container_for_ssh(client, port):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address, username="root",
-                password="root", port=int(port))
+                password=USER_PASSWORD, port=int(port))
     cmd = ""
     for domain in domain_list:
         cert, key, certChain = get_cert_for_domain(domain)
@@ -2742,7 +2752,8 @@ def create_kubectl_client_container(client, port,
     host = hosts[0]
     c = client.create_container(name="test-kubctl-client",
                                 networkMode=MANAGED_NETWORK,
-                                imageUuid="docker:sangeetha/testclient",
+                                imageUuid=SSH_IMAGE_UUID,
+                                environment={"ROOT_PASSWORD": USER_PASSWORD},
                                 ports=[port+":22/tcp"],
                                 requestedHostId=host.id
                                 )
@@ -2784,7 +2795,7 @@ def create_kubectl_client_container(client, port,
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address, username="root",
-                password="root", port=int(port))
+                password=USER_PASSWORD, port=int(port))
     cmd1 = "wget https://storage.googleapis.com/kubernetes-release" + \
            "/release/"+kubectl_version+"/bin/linux/amd64/kubectl"
     cmd2 = "chmod +x kubectl"
@@ -2820,7 +2831,7 @@ def execute_kubectl_cmds(command, expected_resps=None, file_name=None,
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         kubectl_client_con["host"].ipAddresses()[0].address, username="root",
-        password="root", port=int(kubectl_client_con["port"]))
+        password=USER_PASSWORD, port=int(kubectl_client_con["port"]))
     print cmd
 
     stdin, stdout, stderr = ssh.exec_command(cmd)
@@ -3361,7 +3372,8 @@ def rancher_cli_container(admin_client, client, request):
     port = rancher_cli_con["port"]
     c = client.create_container(name="rancher-cli-client-" + random_str(),
                                 networkMode=MANAGED_NETWORK,
-                                imageUuid="docker:sangeetha/testclient",
+                                imageUuid=SSH_IMAGE_UUID,
+                                environment={"ROOT_PASSWORD": USER_PASSWORD},
                                 ports=[port+":22/tcp"],
                                 requestedHostId=host.id
                                 )
@@ -3372,7 +3384,7 @@ def rancher_cli_container(admin_client, client, request):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address, username="root",
-                password="root", port=int(port))
+                password=USER_PASSWORD, port=int(port))
     cmd = cmd1 + ";" + cmd2
     print cmd
     stdin, stdout, stderr = ssh.exec_command(cmd)
@@ -3423,7 +3435,7 @@ def execute_rancher_cli(client, stack_name, command,
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(
         rancher_cli_con["host"].ipAddresses()[0].address, username="root",
-        password="root", port=int(rancher_cli_con["port"]))
+        password=USER_PASSWORD, port=int(rancher_cli_con["port"]))
     cmd = cmd1+";"+cmd2+";"+cmd3+";"+cmd4+";"+cmd5+";"+cmd6+cmd7
     print "Final Command \n" + cmd
     stdin, stdout, stderr = ssh.exec_command(cmd, timeout=timeout)
@@ -3774,7 +3786,7 @@ def validate_connectivity_between_containers(admin_client, con1, con2,
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(host.ipAddresses()[0].address, username="root",
-                password="root", port=int(exposed_port))
+                password=USER_PASSWORD, port=int(exposed_port))
 
     linkName = con2.name
     # Validate DNS resolution using dig
@@ -4001,6 +4013,7 @@ def create_sa_container(client, stack=None, healthcheck=False, port=None,
                   "imageUuid": imageuuid}
     if healthcheck:
         con_params["imageUuid"] = HEALTH_CHECK_IMAGE_UUID
+        con_params["environment"] = {"ROOT_PASSWORD": USER_PASSWORD}
         con_params["healthCheck"] = health_check
     if stack is not None:
         con_params["stackId"] = stack.id
@@ -4022,7 +4035,7 @@ def mark_container_unhealthy(admin_client, con, port):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostIpAddress, username="root",
-                password="root", port=port)
+                password=USER_PASSWORD, port=port)
     cmd = "mv /usr/share/nginx/html/name.html name1.html"
 
     logger.info(cmd)
@@ -4036,7 +4049,7 @@ def mark_container_healthy(admin_client, con, port):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh.connect(hostIpAddress, username="root",
-                password="root", port=port)
+                password=USER_PASSWORD, port=port)
     cmd = "mv name1.html /usr/share/nginx/html/name.html"
 
     logger.info(cmd)
@@ -4067,7 +4080,7 @@ def write_data(con, port, dir, file, content):
     print hostIpAddress
     print str(port)
     ssh.connect(hostIpAddress, username="root",
-                password="root", port=port)
+                password=USER_PASSWORD, port=port)
     cmd1 = "cd " + dir
     cmd2 = "echo '" + content + "' > " + file
     cmd = cmd1 + ";" + cmd2
@@ -4086,7 +4099,7 @@ def read_data(con, port, dir, file):
     print str(port)
 
     ssh.connect(hostIpAddress, username="root",
-                password="root", port=port)
+                password=USER_PASSWORD, port=port)
     print ssh
     cmd1 = "cd " + dir
     cmd2 = "cat " + file
