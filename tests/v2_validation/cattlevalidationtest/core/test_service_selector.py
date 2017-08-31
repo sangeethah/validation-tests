@@ -86,6 +86,7 @@ def test_selectorLink(client):
     launch_config = {"imageUuid": WEB_IMAGE_UUID,
                      "labels": {"test1": "bar"}}
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                          "ports": [port+":22/tcp"]}
 
     env, service = create_env_with_svc_options(client, launch_config_svc,
@@ -181,8 +182,10 @@ def test_selectorLink_dnsservice(client):
     launch_config = {"imageUuid": WEB_IMAGE_UUID,
                      "labels": {"test3": "bar"}}
 
-    client_launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
-                                "ports": [port+":22/tcp"]}
+    client_launch_config_svc = \
+        {"imageUuid": SSH_IMAGE_UUID,
+         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
+         "ports": [port+":22/tcp"]}
     env = create_env(client)
     dns = client.create_dnsService(
         name="dns-1",
@@ -236,9 +239,11 @@ def test__selectorLink_tolinkto_dnsservice(client):
     launch_config = {"imageUuid": WEB_IMAGE_UUID,
                      "labels": {"test5": "bar"}}
 
-    client_launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
-                                "ports": [port+":22/tcp"],
-                                "labels": {"dns": "mydns"}}
+    client_launch_config_svc = \
+        {"imageUuid": SSH_IMAGE_UUID,
+         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
+         "ports": [port+":22/tcp"],
+         "labels": {"dns": "mydns"}}
 
     dns_launch_config = {"labels": {"dns": "mydns"}}
 
@@ -303,6 +308,7 @@ def test_selectorContainer_service_link(client):
         client, labels)
 
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                          "ports": [port+":22/tcp"]}
 
     # Create Service
@@ -337,6 +343,7 @@ def test_selectorContainer_dns(client):
 
     port = "4010"
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                          "ports": [port+":22/tcp"]}
 
     launch_config_consumed_svc = {"imageUuid": WEB_IMAGE_UUID}
@@ -851,7 +858,8 @@ def test_selectorContainer_deactivate_activate(
 
 
 def test_selectorLink_in(client):
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     env, service = \
         create_env_with_svc_options(
@@ -863,7 +871,8 @@ def test_selectorLink_in(client):
 
 
 def test_selectorLink_notin(client):
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     env, service = \
         create_env_with_svc_options(
@@ -874,7 +883,8 @@ def test_selectorLink_notin(client):
 
 
 def test_selectorLink_noteq(client):
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     env, service = \
         create_env_with_svc_options(
@@ -886,7 +896,8 @@ def test_selectorLink_noteq(client):
 
 
 def test_selectorLink_name_no_value(client):
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     env, service = \
         create_env_with_svc_options(
@@ -899,7 +910,8 @@ def test_selectorLink_name_no_value(client):
 
 
 def test_selectorLink_multiple(client):
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID}
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     env, service = \
         create_env_with_svc_options(

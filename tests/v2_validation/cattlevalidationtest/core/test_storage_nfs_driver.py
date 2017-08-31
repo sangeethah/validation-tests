@@ -46,6 +46,7 @@ def services_with_shared_vol(client, volume_driver):
     path = "/myvol"
     port = "1000"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "volumeDriver": volume_driver,
                      "dataVolumes": [volume_name + ":" + path],
                      "ports": [port + ":22/tcp"],
@@ -93,6 +94,7 @@ def services_with_shared_vol_scaleup(client, volume_driver):
     path = "/myvol"
     port = "1001"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "volumeDriver": volume_driver,
                      "dataVolumes": [volume_name + ":" + path],
                      "ports": [port + ":22/tcp"],
@@ -166,6 +168,7 @@ def multiple_services_with_same_shared_vol(client, volume_driver):
     path = "/myvol"
     port = "1002"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "volumeDriver": volume_driver,
                      "dataVolumes": [volume_name + ":" + path],
                      "ports": [port + ":22/tcp"],
@@ -203,6 +206,7 @@ def multiple_services_with_same_shared_vol(client, volume_driver):
     port = "1003"
     path = "/myvoltest"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "volumeDriver": volume_driver,
                      "dataVolumes": [volume_name + ":" + path],
                      "ports": [port + ":22/tcp"],
@@ -242,6 +246,7 @@ def delete_volume_after_service_deletes(client, volume_driver):
     path = "/myvol"
     port = "1004"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "volumeDriver": volume_driver,
                      "dataVolumes": [volume_name + ":" + path],
                      "ports": [port + ":22/tcp"],
@@ -280,6 +285,7 @@ def delete_volume_after_service_deletes(client, volume_driver):
     port = "1005"
     path = "/myvoltest"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "volumeDriver": volume_driver,
                      "dataVolumes": [volume_name + ":" + path],
                      "ports": [port + ":22/tcp"],
@@ -375,6 +381,7 @@ def services_with_custom_export(client, volume_driver):
     root_path = "/myvol"
     root_port = "1006"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "dataVolumes": [root_volume['name'] + ":" + root_path],
                      "ports": [root_port + ":22/tcp"],
                      "labels":
@@ -408,6 +415,7 @@ def services_with_custom_export(client, volume_driver):
     subfolder_port = "1007"
     subfolder_data_volume = subfolder_volume['name'] + ":" + subfolder_path
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "dataVolumes": [subfolder_data_volume],
                      "ports": [subfolder_port + ":22/tcp"],
                      "labels":

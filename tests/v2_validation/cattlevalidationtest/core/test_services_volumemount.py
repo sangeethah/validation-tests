@@ -1,8 +1,5 @@
 from common_fixtures import *  # NOQA
 
-WEB_IMAGE_UUID = "docker:sangeetha/testlbsd:latest"
-SSH_IMAGE_UUID = "docker:sangeetha/testclient:latest"
-
 logger = logging.getLogger(__name__)
 
 
@@ -47,7 +44,8 @@ def create_env_with_2_svc_and_volume_mount(client, service_scale):
         "imageUuid": WEB_IMAGE_UUID}
 
     launch_config_service = {
-        "imageUuid": SSH_IMAGE_UUID}
+        "imageUuid": SSH_IMAGE_UUID,
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     env, service, service_name, consumed_service_name = \
         env_with_2_svc_and_volume_mount_with_config(
             client, service_scale,
@@ -66,7 +64,8 @@ def create_env_with_multiple_svcs_and_volume_mounts(
         "imageUuid": WEB_IMAGE_UUID}
 
     launch_config_service = {
-        "imageUuid": SSH_IMAGE_UUID}
+        "imageUuid": SSH_IMAGE_UUID,
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     random_name = random_str()
     consumed_service_name1 = random_name.replace("-", "")
@@ -119,7 +118,8 @@ def create_env_with_multiple_levels_svcs_and_volume_mounts(
         "imageUuid": WEB_IMAGE_UUID}
 
     launch_config_service = {
-        "imageUuid": SSH_IMAGE_UUID}
+        "imageUuid": SSH_IMAGE_UUID,
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     random_name = random_str()
     consumed_service_name1 = random_name.replace("-", "")
@@ -175,7 +175,8 @@ def create_env_with_multiple_levels_svcs_and_volume_mounts_circular(
         "imageUuid": WEB_IMAGE_UUID}
 
     launch_config_service = {
-        "imageUuid": SSH_IMAGE_UUID}
+        "imageUuid": SSH_IMAGE_UUID,
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
 
     random_name = random_str()
     consumed_service_name1 = random_name.replace("-", "")
@@ -705,7 +706,8 @@ def test_volume_mount_with_start_once(client, socat_containers):
         "imageUuid": WEB_IMAGE_UUID,
         "labels": {"io.rancher.container.start_once": True}}
     launch_config_service = {
-        "imageUuid": SSH_IMAGE_UUID}
+        "imageUuid": SSH_IMAGE_UUID,
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     env, service, service_name, consumed_service_name = \
         env_with_2_svc_and_volume_mount_with_config(
             client, 10,

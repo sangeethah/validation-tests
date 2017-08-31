@@ -1,5 +1,6 @@
 from common_fixtures import *  # NOQA
 import json
+import jinja2
 
 TEST_SERVICE_OPT_IMAGE = 'ibuildthecloud/helloworld'
 TEST_SERVICE_OPT_IMAGE_LATEST = TEST_SERVICE_OPT_IMAGE + ':latest'
@@ -22,6 +23,7 @@ metadata_client_port = 999
 def create_metadata_client_service(request, client):
     env = create_env(client)
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [str(metadata_client_port) + ":22/tcp"],
                      "labels": {"io.rancher.scheduler.global": "true"}}
     service = client.create_service(name="metadataclient",
@@ -44,8 +46,11 @@ def test_metadata_self_2016_07_29(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_1_2016_07_29.yml"
+    dc_file_in = "dc_metadata_1_2016_07_29.yml.j2"
     rc_file = "rc_metadata_1_2016_07_29.yml"
+    dc_file = "dc_metadata_1_2016_07_29.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -141,8 +146,11 @@ def test_metadata_byname_2016_07_29(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_2_2016_07_29.yml"
+    dc_file_in = "dc_metadata_2_2016_07_29.yml.j2"
     rc_file = "rc_metadata_2_2016_07_29.yml"
+    dc_file = "dc_metadata_2_2016_07_29.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -223,8 +231,11 @@ def test_metadata_self_2015_12_19(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_1n.yml"
+    dc_file_in = "dc_metadata_1n.yml.j2"
     rc_file = "rc_metadata_1n.yml"
+    dc_file = "dc_metadata_1n.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -317,8 +328,11 @@ def test_metadata_byname_2015_12_19(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_2n.yml"
+    dc_file_in = "dc_metadata_2n.yml.j2"
     rc_file = "rc_metadata_2n.yml"
+    dc_file = "dc_metadata_2n.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -399,8 +413,11 @@ def test_metadata_self_2015_07_25(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
+    dc_file_in = "dc_metadata_1.yml.j2"
     dc_file = "dc_metadata_1.yml"
     rc_file = "rc_metadata_1.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -478,8 +495,11 @@ def test_metadata_byname_2015_07_25(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_2.yml"
+    dc_file_in = "dc_metadata_2.yml.j2"
     rc_file = "rc_metadata_2.yml"
+    dc_file = "dc_metadata_2.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -550,8 +570,11 @@ def test_metadata_byname_2015_07_25(
 def test_metadata_update(client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_3.yml"
+    dc_file_in = "dc_metadata_3.yml.j2"
     rc_file = "rc_metadata_3.yml"
+    dc_file = "dc_metadata_3.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -602,8 +625,11 @@ def test_metadata_scaleup(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_4.yml"
+    dc_file_in = "dc_metadata_4.yml.j2"
     rc_file = "rc_metadata_4.yml"
+    dc_file = "dc_metadata_4.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -653,8 +679,11 @@ def test_metadata_scaledown(
         client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
-    dc_file = "dc_metadata_5.yml"
+    dc_file_in = "dc_metadata_5.yml.j2"
     rc_file = "rc_metadata_5.yml"
+    dc_file = "dc_metadata_5.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -774,7 +803,10 @@ def test_metadata_links(client, rancher_cli_container):
 def test_metadata_hostnet(client, rancher_cli_container):
 
     env_name = random_str().replace("-", "")
+    dc_file_in = "dc_metadata_hostnet.yml.j2"
     dc_file = "dc_metadata_hostnet.yml"
+    input_config = {"root_password": USER_PASSWORD}
+    create_input_file(dc_file_in, dc_file, input_config)
 
     # Create an environment using up
     env, service = create_stack_using_rancher_cli(
@@ -981,3 +1013,19 @@ def validate_service_container_list(client, con, serviceName,
         print con
         print con_metadata[con["name"]]
         assert cmp(con, con_metadata[con["name"]]) == 0
+
+
+def create_input_file(inFileName, outFileName, input_config):
+    fname = os.path.join(METADATA_SUBDIR, inFileName)
+    rendered_tmpl = render(fname, input_config)
+
+    with open(os.path.join(METADATA_SUBDIR, outFileName), "wt") as fout:
+        fout.write(rendered_tmpl)
+    fout.close()
+
+
+def render(tpl_path, context):
+    path, filename = os.path.split(tpl_path)
+    return jinja2.Environment(
+        loader=jinja2.FileSystemLoader(path)
+    ).get_template(filename).render(context)

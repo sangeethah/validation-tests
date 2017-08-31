@@ -1,8 +1,5 @@
 from common_fixtures import *  # NOQA
 
-WEB_IMAGE_UUID = "docker:sangeetha/testlbsd:latest"
-SSH_IMAGE_UUID = "docker:sangeetha/testclient:latest"
-
 logger = logging.getLogger(__name__)
 
 
@@ -48,6 +45,7 @@ def create_env_with_sidekick(client, service_scale, expose_port, env=None):
     launch_config_service = {
         "imageUuid": SSH_IMAGE_UUID,
         "ports": [expose_port+":22/tcp"],
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD},
         "labels": {
             'io.rancher.scheduler.affinity:container_label_ne':
                 "io.rancher.stack_service.name" +
@@ -87,7 +85,8 @@ def create_env_with_sidekick_anti_affinity(client, service_scale):
             'io.rancher.scheduler.affinity:container_label_ne':
                 "io.rancher.stack_service.name" +
                 "=${stack_name}/${service_name}"
-        }
+        },
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD},
     }
 
     env, service, service_name, consumed_service_name = \
@@ -119,6 +118,7 @@ def create_env_with_exposed_ports_on_primary_and_secondary(
         client, service_scale, expose_port_pri, expose_port_sec):
     launch_config_consumed_service = {
         "imageUuid": SSH_IMAGE_UUID,
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD},
         "ports": [expose_port_pri+":22/tcp"]}
 
     launch_config_service = {
@@ -144,6 +144,7 @@ def create_env_with_multiple_sidekicks(client, service_scale, expose_port):
     launch_config_service = {
         "imageUuid": SSH_IMAGE_UUID,
         "ports": [expose_port+":22/tcp"],
+        "environment": {"ROOT_PASSWORD": USER_PASSWORD},
         "labels": {
             'io.rancher.scheduler.affinity:container_label_ne':
                 "io.rancher.stack_service.name" +
@@ -362,6 +363,7 @@ def test_service_links_to_sidekick(client):
 
     client_port = "7004"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [client_port+":22/tcp"]}
 
     service = create_svc(client, env, launch_config, 1)
@@ -768,7 +770,7 @@ def validate_dns(client, service_containers, consumed_service,
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host.ipAddresses()[0].address, username="root",
-                    password="root", port=int(exposed_port))
+                    password=USER_PASSWORD, port=int(exposed_port))
 
         # Validate link containers
         cmd = "wget -O result.txt --timeout=20 --tries=1 http://" + dnsname + \

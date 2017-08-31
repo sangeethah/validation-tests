@@ -1613,7 +1613,7 @@ def test_lb_with_selector_link_target_portrules(client,
     # Create Environment
     env = create_env(client)
 
-    launch_config_svc = {"imageUuid": LB_HOST_ROUTING_IMAGE_UUID,
+    launch_config_svc = {"imageUuid": WEB_IMAGE_UUID,
                          "labels": {"test1": "value1"}}
     port_rule1 = {
         "targetPort": "80",

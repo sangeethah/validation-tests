@@ -81,12 +81,10 @@ if_stress = pytest.mark.skipif(
     STRESS_TEST != "True",
     reason='Not Stress Test Run')
 
-
-WEB_IMAGE_UUID = "docker:sangeetha/testlbsd:latest"
 WEB_SSL_IMAGE1_UUID = "docker:sangeetha/ssllbtarget1:latest"
 WEB_SSL_IMAGE2_UUID = "docker:sangeetha/ssllbtarget2:latest"
 SSH_IMAGE_UUID = "docker:sangeetha/testclient:v2"
-LB_HOST_ROUTING_IMAGE_UUID = "docker:sangeetha/testnewhostrouting:latest"
+WEB_IMAGE_UUID = "docker:sangeetha/testnewhostrouting:latest"
 SSH_IMAGE_UUID_HOSTNET = "docker:sangeetha/testclient33:v2"
 HOST_ACCESS_IMAGE_UUID = "docker:sangeetha/testclient44:v2"
 HEALTH_CHECK_IMAGE_UUID = "docker:sangeetha/testhealthcheck:v3"
@@ -156,6 +154,7 @@ def cattle_url(project_id=None):
     if project_id is not None:
         server_url += "/projects/"+project_id
     return server_url
+
 
 def rancher_server_url():
     default_url = 'http://localhost:8080'
@@ -1688,7 +1687,7 @@ def create_env_with_containers_and_lb(client, scale_lb, port,
                                       con_health_check_enabled=False,
                                       con_port=None):
     if not target_with_certs:
-        imageuuid = LB_HOST_ROUTING_IMAGE_UUID
+        imageuuid = WEB_IMAGE_UUID
         target_port = 80
     else:
         imageuuid = WEB_SSL_IMAGE1_UUID
@@ -2277,7 +2276,7 @@ def create_env_with_multiple_svc_and_lb(client, scale_svc, scale_lb,
                                         ports, count, port_rules=[],
                                         config=None, crosslinking=False):
     launch_config_svc = \
-        {"imageUuid": LB_HOST_ROUTING_IMAGE_UUID}
+        {"imageUuid": WEB_IMAGE_UUID}
 
     launch_config_lb = {"imageUuid": get_haproxy_image()}
     launch_config_lb["ports"] = ports
@@ -2343,7 +2342,7 @@ def create_env_with_multiple_svc_and_ssl_lb(client, scale_svc, scale_lb,
                                             default_cert, certs=[]):
 
     launch_config_svc = \
-        {"imageUuid": LB_HOST_ROUTING_IMAGE_UUID}
+        {"imageUuid": WEB_IMAGE_UUID}
     launch_config_lb = {"imageUuid": get_haproxy_image()}
     launch_config_lb["ports"] = ports
 
@@ -3979,7 +3978,7 @@ def stop_container_from_host(client, container):
 def create_global_service(client, min, max, increment, host_label=None):
     env = create_env(client)
     launch_config = {
-        "imageUuid": LB_HOST_ROUTING_IMAGE_UUID,
+        "imageUuid": WEB_IMAGE_UUID,
         "labels": {
             'io.rancher.scheduler.global': 'true'}
     }
@@ -4000,7 +3999,7 @@ def create_global_service(client, min, max, increment, host_label=None):
 
 def create_sa_container(client, stack=None, healthcheck=False, port=None,
                         sidekick_to=None,
-                        imageuuid=LB_HOST_ROUTING_IMAGE_UUID):
+                        imageuuid=WEB_IMAGE_UUID):
     health_check = {"name": "check1", "responseTimeout": 2000,
                     "interval": 2000, "healthyThreshold": 2,
                     "unhealthyThreshold": 2,

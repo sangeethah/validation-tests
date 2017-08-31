@@ -3,7 +3,9 @@ test120160729:
   - 6002:22/tcp
   restart: always
   tty: true
-  image: sangeetha/testclient
+  image: sangeetha/testclient:v2
+  environment:
+    ROOT_PASSWORD: "{{ root_password }}"
   stdin_open: true
   labels:
     test1: value1

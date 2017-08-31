@@ -60,6 +60,7 @@ def test_ebs_volume_read_write_data(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -82,6 +83,7 @@ def test_ebs_volume_read_write_data(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -124,6 +126,7 @@ def test_ebs_volume_move_same_host(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -147,6 +150,7 @@ def test_ebs_volume_move_same_host(client):
                      "networkMode": "managed",
                      "ports": [port + ":22/tcp"],
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -190,6 +194,7 @@ def test_ebs_volume_move_diff_hosts(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -214,6 +219,7 @@ def test_ebs_volume_move_diff_hosts(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[1].id
                      }
@@ -254,6 +260,7 @@ def test_ebs_volume_restart_service_instance(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -306,6 +313,7 @@ def test_ebs_volume_activate_deactivate_service(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -370,6 +378,7 @@ def test_ebs_volume_delete_instance(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -1030,6 +1039,7 @@ def test_ebs_volume_restart_driver_container(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }
@@ -1082,6 +1092,7 @@ def test_ebs_volume_stop_driver_container(client):
                      "ports": [port + ":22/tcp"],
                      "networkMode": "managed",
                      "imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "stdinOpen": True,
                      "requestedHostId": hosts[0].id
                      }

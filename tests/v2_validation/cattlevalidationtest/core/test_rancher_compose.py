@@ -3,7 +3,6 @@ from common_fixtures import *  # NOQA
 TEST_SERVICE_OPT_IMAGE = 'ibuildthecloud/helloworld'
 TEST_SERVICE_OPT_IMAGE_LATEST = TEST_SERVICE_OPT_IMAGE + ':latest'
 TEST_SERVICE_OPT_IMAGE_UUID = 'docker:' + TEST_SERVICE_OPT_IMAGE_LATEST
-LB_IMAGE_UUID = "docker:sangeetha/testlbsd:latest"
 
 logger = logging.getLogger(__name__)
 
@@ -279,7 +278,7 @@ def test_rancher_compose_services_port_and_link_options(
     exposed_port = 9999
 
     link_container = client.create_container(
-        imageUuid=LB_IMAGE_UUID,
+        imageUuid=WEB_IMAGE_UUID,
         environment={'CONTAINER_NAME': link_name},
         name=random_str(),
         requestedHostId=host.id

@@ -7,9 +7,6 @@ TEST_SERVICE_OPT_IMAGE = 'ibuildthecloud/helloworld'
 TEST_SERVICE_OPT_IMAGE_LATEST = TEST_SERVICE_OPT_IMAGE + ':latest'
 TEST_SERVICE_OPT_IMAGE_UUID = 'docker:' + TEST_SERVICE_OPT_IMAGE_LATEST
 
-LB_IMAGE_UUID = "docker:sangeetha/testlbsd:latest"
-SSH_IMAGE_UUID = "docker:sangeetha/testclient:latest"
-
 
 docker_config_running = [{"docker_param_name": "State.Running",
                          "docker_param_value": "true"}]
@@ -325,7 +322,7 @@ def test_services_port_and_link_options(client,
     exposed_port = 9999
 
     link_container = client.create_container(
-        imageUuid=LB_IMAGE_UUID,
+        imageUuid=WEB_IMAGE_UUID,
         environment={'CONTAINER_NAME': link_name},
         name=random_str(),
         requestedHostId=host.id
@@ -334,6 +331,7 @@ def test_services_port_and_link_options(client,
     link_container = client.wait_success(link_container)
 
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [str(exposed_port)+":22/tcp"],
                      "instanceLinks": {
                          link_name:
@@ -1268,6 +1266,7 @@ def test_dns_service_with_healthcheck_none_container_unhealthy(
                                                     strategy="none")
     # Create Client Service for DNS access check
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                          "ports": [str(cport)+":22/tcp"]}
     random_name = random_str()
     service_name = random_name.replace("-", "")
@@ -1474,7 +1473,8 @@ def test_service_name_unique_edit(client):
 
 
 def test_service_retain_ip(client):
-    launch_config = {"imageUuid": SSH_IMAGE_UUID}
+    launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     service, env = create_env_and_svc(client, launch_config, 3, retainIp=True)
     service = service.activate()
     service = client.wait_success(service, 300)
@@ -1508,7 +1508,7 @@ def test_service_retain_ip(client):
 def test_services_rolling_strategy(client,
                                    socat_containers):
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
-                     }
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     service, env = create_env_and_svc(client, launch_config, 5)
 
     env = env.activateservices()
@@ -1543,6 +1543,7 @@ def test_service_reconcile_on_stop_exposed_port(client,
                                                 socat_containers):
     port = "45"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [port+":22/tcp"]}
     service, env = create_env_and_svc(client, launch_config, scale=3)
     env = env.activateservices()
@@ -1556,6 +1557,7 @@ def test_service_reconcile_on_restart_exposed_port(client,
                                                    socat_containers):
     port = "46"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [port+":22/tcp"]}
     service, env = create_env_and_svc(client, launch_config, scale=3)
     env = env.activateservices()
@@ -1569,6 +1571,7 @@ def test_service_reconcile_on_delete_exposed_port(client,
                                                   socat_containers):
     port = "47"
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [port+":22/tcp"]}
     service, env = create_env_and_svc(client, launch_config, scale=3)
     env = env.activateservices()
@@ -1890,7 +1893,7 @@ def service_with_healthcheck_enabled(client, scale, port=None,
                     "interval": 2000, "healthyThreshold": 2,
                     "unhealthyThreshold": 3}
     launch_config = {"imageUuid": HEALTH_CHECK_IMAGE_UUID,
-                     "environment" : {"ROOT_PASSWORD": USER_PASSWORD},
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "healthCheck": health_check
                      }
 

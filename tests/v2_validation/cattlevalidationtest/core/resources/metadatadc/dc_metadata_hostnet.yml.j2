@@ -2,6 +2,8 @@ testhostdns:
   labels:
     io.rancher.container.dns: 'true'
   tty: true
-  image: sangeetha/testclient33:latest
+  image: sangeetha/testclient33:v2
+  environment:
+    ROOT_PASSWORD: "{{ root_password }}"
   stdin_open: true
   net: host

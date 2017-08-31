@@ -472,6 +472,7 @@ def test_dns_discoverys_with_hostnetwork_externalService(client):
         create_env_with_ext_svc(client, 1, port)
 
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID_HOSTNET,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                          "networkMode": "host",
                          "labels": dns_labels}
     random_name = random_str()
@@ -506,6 +507,7 @@ def test_dns_discoverys_with_hostnetwork_externalService_cname(
         create_env_with_ext_svc(client, 1, port, True)
 
     launch_config_svc = {"imageUuid": SSH_IMAGE_UUID_HOSTNET,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                          "networkMode": "host",
                          "labels": dns_labels}
     random_name = random_str()
@@ -543,7 +545,8 @@ def test_dns_discoverys_coss_stack_service(
     assert service.state == "active"
 
     port = "424"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     env1 = create_env(client)
     service_name = random_str()
@@ -584,7 +587,8 @@ def test_dns_discoverys_coss_stack_service_uppercase(
     assert service.state == "active"
 
     port = "425"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     env1 = create_env(client)
     service_name = random_str()
@@ -625,7 +629,8 @@ def test_dns_discoverys_for_containers_by_name_and_fqdn(
     assert service.state == "active"
 
     port = "426"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     service_name = random_str()
     service1 = client.create_service(name=service_name,
@@ -668,7 +673,8 @@ def test_dns_discoverys_for_containers_by_name_and_fqdn_cross_stack(
 
     # Deploy client service
     port = "427"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     env1 = create_env(client)
     service_name = random_str()
@@ -719,7 +725,8 @@ def test_dns_discovery_for_sidekick_containers_by_name_and_fqdn_cross_stack(
 
     # Deploy client service in another environment
     port = "429"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     env1 = create_env(client)
     service_name = random_str()
@@ -766,7 +773,8 @@ def test_dns_discovery_for_service_with_sidekick(client):
 
     # Deploy client service in same environment
     port = "431"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     service_name = random_str()
     service1 = client.create_service(name=service_name,
@@ -809,7 +817,8 @@ def test_dns_discovery_for_service_with_sidekick_cross_stack(
 
     # Deploy client service in a different environment
     port = "433"
-    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID, }
+    launch_config_svc = {"imageUuid": SSH_IMAGE_UUID,
+                         "environment": {"ROOT_PASSWORD": USER_PASSWORD}}
     launch_config_svc["ports"] = [port+":"+"22/tcp"]
     service_name = random_str()
     env1 = create_env(client)

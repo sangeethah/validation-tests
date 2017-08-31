@@ -578,6 +578,7 @@ def test_dns_services_delete_service_add_service(client):
 
     # Add another service and link to dns service
     launch_config = {"imageUuid": SSH_IMAGE_UUID,
+                     "environment": {"ROOT_PASSWORD": USER_PASSWORD},
                      "ports": [port1+":22/tcp"]}
 
     random_name = random_str()

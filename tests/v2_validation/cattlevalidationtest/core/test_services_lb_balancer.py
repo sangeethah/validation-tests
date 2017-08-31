@@ -852,6 +852,7 @@ def test_lbservice_internal(client, socat_containers):
 
     client_con = client.create_container(
         name=random_str(), imageUuid=SSH_IMAGE_UUID,
+        environment={"ROOT_PASSWORD": USER_PASSWORD},
         ports=[con_port+":22/tcp"], requestedHostId=host.id)
     client_con = client.wait_success(client_con, 120)
     assert client_con.state == "running"
@@ -895,6 +896,7 @@ def test_multiple_lbservice_internal_same_host_port(
 
     client_con = client.create_container(
         name=random_str(), imageUuid=SSH_IMAGE_UUID,
+        environment={"ROOT_PASSWORD": USER_PASSWORD},
         ports=[con_port+":22/tcp"], requestedHostId=host.id)
     client_con = client.wait_success(client_con, 120)
     assert client_con.state == "running"
