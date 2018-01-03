@@ -6,7 +6,8 @@ log = logging.getLogger(__name__)
 
 
 def pytest_configure(config):
-    cleanup()
+    if TEST_CLEAN_UP_ON_START == "true":
+        cleanup()
 
 
 def cleanup():

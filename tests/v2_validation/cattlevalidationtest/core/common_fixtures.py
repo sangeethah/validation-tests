@@ -67,6 +67,7 @@ STRESS_TEST = os.environ.get(
 
 ONTAG_RUNS = os.environ.get(
     'ONTAG_RUNS', "false")
+TEST_CLEAN_UP_ON_START = os.environ.get('TEST_CLEAN_UP_ON_START', "true")
 
 ACCESS_KEY = os.environ.get('ACCESS_KEY')
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -153,9 +154,12 @@ k8s_skip_restart_check = os.environ.get("SKIP_RESTART_CHECK", "false")
 
 
 @pytest.fixture(scope='session')
-def cattle_url(project_id=None):
+def cattle_url(project_id=None, cattle_test_url=None):
     default_url = 'http://localhost:8080'
-    server_url = os.environ.get('CATTLE_TEST_URL', default_url)
+    if cattle_test_url is not None:
+        server_url = cattle_test_url
+    else:
+        server_url = os.environ.get('CATTLE_TEST_URL', default_url)
     server_url = server_url + "/" + api_version
     if project_id is not None:
         server_url += "/projects/"+project_id
@@ -223,7 +227,7 @@ def acc_id(client):
     return obj.account().id
 
 
-def client_for_project(project):
+def client_for_project(project, cattle_test_url=None):
     access_key = random_str()
     secret_key = random_str()
     admin_client = _admin_client()
@@ -244,8 +248,9 @@ def client_for_project(project):
     active_cred = wait_success(admin_client, active_cred)
     if active_cred.state != 'active':
         wait_success(admin_client, active_cred.activate())
-
-    return from_env(url=cattle_url(),
+    if cattle_test_url is None:
+        cattle_test_url = cattle_url()
+    return from_env(url=cattle_test_url,
                     cache=False,
                     access_key=access_key,
                     secret_key=secret_key)
@@ -616,6 +621,50 @@ def host_ssh_containers(request, client):
         os.system("rm " + PRIVATE_KEY_FILENAME)
 
     request.addfinalizer(fin)
+
+
+def create_template_with_subnet(client, name,
+                                subnet, subnet_start, subnet_end):
+    stacks = [
+        {"type": "catalogTemplate",
+         "name": "healthcheck",
+         "templateId": "library:infra*healthcheck"},
+        {"type": "catalogTemplate",
+         "name": "network-services",
+         "templateId": "library:infra*network-services"},
+        {"type": "catalogTemplate",
+         "name": "network-policy-manager",
+         "templateId": "library:infra*network-policy-manager"},
+        {"type": "catalogTemplate",
+         "name": "ipsec",
+         "answers":
+             {"DOCKER_BRIDGE": "docker0",
+              "HOST_PORTS": True,
+              "IPSEC_CHILD_SA_REKEY_INTERVAL": "1h",
+              "IPSEC_IKE_SA_REKEY_INTERVAL": "4h",
+              "IPSEC_REPLAY_WINDOW_SIZE": "1024",
+              "MTU": "1500",
+              "RANCHER_DEBUG": False,
+              "RANCHER_HAIRPIN_MODE": False,
+              "RANCHER_IPSEC_PSK": "testpskkey1",
+              "RANCHER_PROMISCUOUS_MODE": True,
+              "SUBNET": subnet,
+              "SUBNET_END_ADDRESS": subnet_end,
+              "SUBNET_PREFIX": subnet[subnet.find("/")+1:],
+              "SUBNET_START_ADDRESS": subnet_start},
+         "templateId": "library:infra*ipsec"},
+        {"type": "catalogTemplate",
+         "name": "scheduler",
+         "templateId": "library:infra*scheduler"},
+
+    ]
+    project_template = client.create_projectTemplate(
+        name=name,
+        externalId="catalog://library:project*cattle:0",
+        isPublic=False,
+        kind="projectTemplate",
+        stacks=stacks)
+    return project_template
 
 
 def get_ssh_to_host_ssh_container(host):
@@ -1103,7 +1152,8 @@ def validate_lb_service_for_external_services(client, lb_service,
 def validate_lb_service(client, lb_service, port,
                         target_services, hostheader=None, path=None,
                         domain=None, test_ssl_client_con=None,
-                        unmanaged_cons=None):
+                        unmanaged_cons=None,
+                        lb_client=None):
     target_count = 0
     for service in target_services:
         target_count = \
@@ -1126,6 +1176,8 @@ def validate_lb_service(client, lb_service, port,
     else:
         assert len(container_names) == target_count
 
+    if lb_client is not None:
+        client = lb_client
     validate_lb_service_con_names(client, lb_service, port,
                                   container_names, hostheader, path, domain,
                                   test_ssl_client_con)
@@ -1221,14 +1273,15 @@ def check_for_no_access_ip(lb_ip, port, is_ssl=False):
         return True
 
 
-def validate_linked_service(admin_client, service, consumed_services,
+def validate_linked_service(client, service, consumed_services,
                             exposed_port, exclude_instance=None,
                             exclude_instance_purged=False,
                             unmanaged_cons=None, linkName=None,
-                            not_reachable=False):
+                            not_reachable=False,
+                            linked_service_client=None):
     time.sleep(sleep_interval)
 
-    containers = get_service_container_list(admin_client, service)
+    containers = get_service_container_list(client, service)
     assert len(containers) == service.scale
 
     for container in containers:
@@ -1237,7 +1290,9 @@ def validate_linked_service(admin_client, service, consumed_services,
             expected_dns_list = []
             expected_link_response = []
             dns_response = []
-            consumed_containers = get_service_container_list(admin_client,
+            if linked_service_client is not None:
+                client = linked_service_client
+            consumed_containers = get_service_container_list(client,
                                                              consumed_service)
             if exclude_instance_purged:
                 assert len(consumed_containers) == consumed_service.scale - 1
@@ -2766,7 +2821,7 @@ def create_client_container_for_ssh(client, port):
 
 def create_kubectl_client_container(client, port,
                                     project_name="Default",
-                                    project_id="1a5"):
+                                    project_id=PROJECT_ID):
     test_kubectl_client_con = {}
     hosts = client.list_host(kind='docker', removed_null=True, state="active")
     assert len(hosts) > 0
@@ -3055,7 +3110,8 @@ def check_for_stickiness(url, expected_responses, headers=None):
 
 
 def add_digital_ocean_hosts(client, count, size="2gb",
-                            docker_version="1.12"):
+                            docker_version="1.12",
+                            wait_for_success=True):
     assert do_access_key is not None, \
         "DigitalOcean access key not set"
 
@@ -3074,10 +3130,10 @@ def add_digital_ocean_hosts(client, count, size="2gb",
                        "engineInstallUrl": docker_install_url}
         host = client.create_host(**create_args)
         hosts.append(host)
-
-    for host in hosts:
-        host = client.wait_success(host, timeout=DEFAULT_MACHINE_TIMEOUT)
-        assert host.state == 'active'
+    if wait_for_success:
+        for host in hosts:
+            host = client.wait_success(host, timeout=DEFAULT_MACHINE_TIMEOUT)
+            assert host.state == 'active'
     return hosts
 
 
@@ -3371,11 +3427,10 @@ def get_sidekick_service_name(env, service, sidekick_name):
 
 
 @pytest.fixture(scope='session')
-def rancher_cli_container(admin_client, client, request):
-
+def rancher_cli_container(client, request):
     if rancher_cli_con["container"] is not None:
         return
-    setting = admin_client.by_id_setting(
+    setting = client.by_id_setting(
         "rancher.cli.linux.url")
     default_rancher_cli_url = setting.value
     rancher_cli_url = \
@@ -3424,7 +3479,8 @@ def rancher_cli_container(admin_client, client, request):
 
 def execute_rancher_cli(client, stack_name, command,
                         docker_compose=None, rancher_compose=None,
-                        timeout=SERVICE_WAIT_TIMEOUT):
+                        timeout=SERVICE_WAIT_TIMEOUT,
+                        project=None):
     access_key = client._access_key
     secret_key = client._secret_key
 
@@ -3435,7 +3491,10 @@ def execute_rancher_cli(client, stack_name, command,
     cmd2 = "export RANCHER_ACCESS_KEY=" + access_key
     cmd3 = "export RANCHER_SECRET_KEY=" + secret_key
     cmd4 = "cd rancher-v*"
-    cmd5 = "export RANCHER_ENVIRONMENT=" + PROJECT_NAME
+    if project is not None:
+        cmd5 = "export RANCHER_ENVIRONMENT=" + project.name
+    else:
+        cmd5 = "export RANCHER_ENVIRONMENT=" + PROJECT_ID
     clicmd = "./rancher " + command
     if docker_compose is not None and rancher_compose is None:
         cmd6 = 'echo "' + docker_compose + '" > ' + docker_filename + ";"
@@ -3464,14 +3523,15 @@ def execute_rancher_cli(client, stack_name, command,
 
 def launch_rancher_cli_from_file(client, subdir, env_name, command,
                                  expected_response, docker_compose=None,
-                                 rancher_compose=None):
+                                 rancher_compose=None,
+                                 project=None):
     if docker_compose is not None:
         docker_compose = readDataFile(subdir, docker_compose)
     if rancher_compose is not None:
         rancher_compose = readDataFile(subdir, rancher_compose)
     cli_response = execute_rancher_cli(client, env_name, command,
                                        docker_compose, rancher_compose,
-                                       timeout=150)
+                                       timeout=150, project=project)
     print "Obtained Response: " + str(cli_response)
     print "Expected Response: " + str(expected_response)
     found = False
@@ -3893,7 +3953,7 @@ def stop_service_instances(client, env, service, stop_instance_index):
         containers = client.list_container(name=container_name)
         assert len(containers) == 1
         container = containers[0]
-        stop_container_from_host(admin_client, container)
+        stop_container_from_host(client, container)
         logger.info("Stopped container - " + container_name)
     service = wait_state(client, service, "active")
     check_container_in_service(client, service)
@@ -3926,21 +3986,27 @@ def restart_service_instances(client, env, service, restart_instance_index):
 
 
 def create_stack_with_service(
-        client, env_name, resource_dir, dc_file, rc_file):
+        client, env_name, resource_dir, dc_file, rc_file=None):
     dockerCompose = readDataFile(resource_dir, dc_file)
-    rancherCompose = readDataFile(resource_dir, rc_file)
+    rancherCompose = None
+    if rc_file is not None:
+        rancherCompose = readDataFile(resource_dir, rc_file)
 
-    create_stack_with_service_from_config(client, env_name,
-                                          dockerCompose, rancherCompose)
+    return create_stack_with_service_from_config(
+        client, env_name, dockerCompose, rancherCompose)
 
 
 def create_stack_with_service_from_config(client, env_name,
-                                          dockerCompose, rancherCompose):
-
-    env = client.create_stack(name=env_name,
-                              dockerCompose=dockerCompose,
-                              rancherCompose=rancherCompose,
-                              startOnCreate=True)
+                                          dockerCompose, rancherCompose=None):
+    if rancherCompose is None:
+        env = client.create_stack(name=env_name,
+                                  dockerCompose=dockerCompose,
+                                  startOnCreate=True)
+    else:
+        env = client.create_stack(name=env_name,
+                                  dockerCompose=dockerCompose,
+                                  rancherCompose=rancherCompose,
+                                  startOnCreate=True)
     env = client.wait_success(env, timeout=300)
     assert env.state == "active"
 
@@ -4182,6 +4248,22 @@ def get_client_for_auth_enabled_setup(access_key, secret_key, project_id=None):
     return client
 
 
+def get_client(cattle_url_str, access_key, secret_key, project_id=None):
+    url = cattle_url_str + "/" + api_version
+    if project_id is not None:
+        url += "/projects/" + project_id
+    test_client = from_env(
+        url=url,
+        cache=True,
+        access_key=access_key,
+        secret_key=secret_key)
+    if project_id is not None:
+        test_client._headers.__setitem__("X-API-Project-Id", project_id)
+    test_client.reload_schema()
+    assert test_client.valid()
+    return test_client
+
+
 def upgrade_stack(client, stack_name, service, docker_compose,
                   rancher_compose=None, upgrade_option=None,
                   directory=None):
@@ -4197,6 +4279,22 @@ def upgrade_stack(client, stack_name, service, docker_compose,
         docker_compose, rancher_compose)
     service = client.reload(service)
     assert service.state == "upgraded"
+    return service
+
+
+def update_stack(client, stack_name, service, docker_compose,
+                 rancher_compose=None, directory=None,
+                 project=None):
+
+    if directory is None:
+        directory = INSERVICE_SUBDIR
+    update_cmd = "up --upgrade -d "
+    launch_rancher_cli_from_file(
+        client, directory, stack_name,
+        update_cmd, "Creating",
+        docker_compose, rancher_compose, project=project)
+    service = client.reload(service)
+    assert service.state == "active"
     return service
 
 
@@ -4477,6 +4575,15 @@ def jinja2_render(tpl_path, context):
     ).get_template(filename).render(context)
 
 
+def create_template_for_jinja(subdir, jinja_fname, input_config, updated_file):
+    fname = os.path.join(subdir, jinja_fname)
+    rendered_tmpl = jinja2_render(fname, input_config)
+
+    with open(os.path.join(subdir, updated_file), "wt") as fout:
+        fout.write(rendered_tmpl)
+    fout.close()
+
+
 def k8s_check_dashboard():
     k8s_client = kubectl_client_con["k8s_client"]
     project_id = k8s_client.list_project()[0].id
@@ -4641,3 +4748,9 @@ def k8s_check_cluster_health(input_config=None):
     k8s_validate_stack(input_config)
     k8s_modify_stack(input_config)
     time.sleep(120)
+
+
+def get_project_by_name(client, name):
+    ps = client.list_project(name=name)
+    assert len(ps) == 1
+    return ps[0]

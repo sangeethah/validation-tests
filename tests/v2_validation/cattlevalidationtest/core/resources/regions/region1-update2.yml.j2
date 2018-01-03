@@ -1,0 +1,21 @@
+version: '2'
+services:
+  test1:
+    image: sangeetha/testclient
+    stdin_open: true
+    tty: true
+    ports:
+    - 9001:22/tcp
+    links:
+    - {{ region1 }}/{{ project3 }}/stack3/linked2:myweb
+    - {{ region1 }}/{{ project2 }}/stack2/linked1:myweb2
+    labels:
+      io.rancher.container.pull_image: always
+  lb-1:
+    image: {{ lb_image }}
+    ports:
+    - 9000:9000/tcp
+    labels:
+      io.rancher.container.agent.role: environmentAdmin,agent
+      io.rancher.container.agent_service.drain_provider: 'true'
+      io.rancher.container.create_agent: 'true'

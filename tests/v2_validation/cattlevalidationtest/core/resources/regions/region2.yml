@@ -1,0 +1,16 @@
+version: '2'
+services:
+  linked1:
+    image: sangeetha/testnewhostrouting
+    stdin_open: true
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+  target1:
+    image: sangeetha/testnewhostrouting
+    stdin_open: true
+    tty: true
+    labels:
+      io.rancher.container.pull_image: always
+    labels:
+      foo: bar
